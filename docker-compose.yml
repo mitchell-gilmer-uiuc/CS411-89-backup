@@ -1,0 +1,13 @@
+# docker-compose for local development only. All required environment variables should be in .env
+version: "3.9"
+
+
+services:
+  backend:
+    image: gilmer2/cs411_89_backend:latest 
+    build:
+      context: .
+      dockerfile: pollutionFlask/Dockerfile
+    container_name: backend
+    ports:
+      - 5000:5000
