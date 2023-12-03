@@ -19,9 +19,9 @@ def make_where_clause(param_map):
     for key, value in param_map.items():
         if value is not None:
             csv = value.split(",")
-            if key == 'start_date':
+            if key == 'start_date' or key == 'gte_mean' or key == 'gte_aqi':
                 params.append(f"date >= '{value}'")
-            elif key == 'end_date':
+            elif key == 'end_date' or key == 'lte_mean' or key == 'lte_aqi':
                 params.append(f"date <= '{value}'")
             else:
                 if len(csv) == 1:
@@ -49,23 +49,11 @@ def backend_entry():
 
 # get single entries by ID
 
-
-@app.route('/api/state/<int:id>')
-def get_state(id):  # put application's code here
+@app.route('/api/site/<int:site_id>')
+def get_site(site_id):  # put application's code here
     with connection.cursor() as cursor:
         # Read a single record
-        sql = f"SELECT * FROM State WHERE id={id}"
-        cursor.execute(sql)
-        result = cursor.fetchall()
-        print(result)
-    return result
-
-
-@app.route('/api/county/<int:id>')
-def get_county(id):  # put application's code here
-    with connection.cursor() as cursor:
-        # Read a single record
-        sql = f"SELECT * FROM County WHERE id={id}"
+        sql = f"SELECT * FROM Site WHERE id={site_id}"
         cursor.execute(sql)
         result = cursor.fetchall()
         print(result)
@@ -83,11 +71,33 @@ def get_city(id):  # put application's code here
     return result
 
 
-@app.route('/api/site/<int:site_id>')
-def get_site(site_id):  # put application's code here
+@app.route('/api/county/<int:id>')
+def get_county(id):  # put application's code here
     with connection.cursor() as cursor:
         # Read a single record
-        sql = f"SELECT * FROM Site WHERE id={site_id}"
+        sql = f"SELECT * FROM County WHERE id={id}"
+        cursor.execute(sql)
+        result = cursor.fetchall()
+        print(result)
+    return result
+
+
+@app.route('/api/state/<int:id>')
+def get_state(id):  # put application's code here
+    with connection.cursor() as cursor:
+        # Read a single record
+        sql = f"SELECT * FROM State WHERE id={id}"
+        cursor.execute(sql)
+        result = cursor.fetchall()
+        print(result)
+    return result
+
+
+@app.route('/api/region/<int:id>')
+def get_region(id):  # put application's code here
+    with connection.cursor() as cursor:
+        # Read a single record
+        sql = f"SELECT * FROM Region WHERE id={id}"
         cursor.execute(sql)
         result = cursor.fetchall()
         print(result)
@@ -104,6 +114,16 @@ def get_measurement(id):  # put application's code here
         print(result)
     return result
 
+
+@app.route('/api/compound/<int:id>')
+def get_compound(id):  # put application's code here
+    with connection.cursor() as cursor:
+        # Read a single record
+        sql = f"SELECT * FROM Compound WHERE id={id}"
+        cursor.execute(sql)
+        result = cursor.fetchall()
+        print(result)
+    return result
 
 # get multiple results with filters (or all entries without filters)
 
@@ -176,6 +196,40 @@ def get_states():  # put application's code here
     return result
 
 
+@app.route('/api/region/')  # @app.route(GET/api/states)
+def get_regions():  # put application's code here
+    param_map = {
+        'id': request.args.get('id', None),
+        'name': request.args.get('name', None),
+    }
+    query_where = make_where_clause(param_map)
+    with connection.cursor() as cursor:
+        # Read a single record
+        sql = f"SELECT * FROM Region {query_where}"
+        print(sql)
+        cursor.execute(sql)
+        result = cursor.fetchall()
+        print(result)
+    return result
+
+
+@app.route('/api/site_region/')  # @app.route(GET/api/states)
+def get_site_regions():  # put application's code here
+    param_map = {
+        'site_id': request.args.get('site_id', None),
+        'region_id': request.args.get('region_id', None),
+    }
+    query_where = make_where_clause(param_map)
+    with connection.cursor() as cursor:
+        # Read a single record
+        sql = f"SELECT * FROM Site_Region {query_where}"
+        print(sql)
+        cursor.execute(sql)
+        result = cursor.fetchall()
+        print(result)
+    return result
+
+
 @app.route('/api/getdata/')
 def get_data():  # put application's code here
     param_map = {
@@ -184,6 +238,12 @@ def get_data():  # put application's code here
         'date': request.args.get('date', None),  # return measurements taken on a singular date
         'start_date': request.args.get('start_date', None),
         'end_date': request.args.get('end_date', None),  # return all or only measurements before this given date
+        'mean': request.args.get('mean', None),
+        'gte_mean': request.args.get('gte_mean', None),
+        'lte_mean': request.args.get('lte_mean', None),
+        'aqi': request.args.get('mean', None),
+        'gte_aqi': request.args.get('gte_mean', None),
+        'lte_aqi': request.args.get('lte_mean', None),
     }
     query_where = make_where_clause(param_map)
     # print(query_where)
@@ -195,6 +255,24 @@ def get_data():  # put application's code here
         result = cursor.fetchall()
         print(result)
     return result
+
+
+@app.route('/api/compound/')  # @app.route(GET/api/states)
+def get_compounds():  # put application's code here
+    param_map = {
+        'id': request.args.get('id', None),
+        'name': request.args.get('name', None),
+    }
+    query_where = make_where_clause(param_map)
+    with connection.cursor() as cursor:
+        # Read a single record
+        sql = f"SELECT * FROM Compound {query_where}"
+        print(sql)
+        cursor.execute(sql)
+        result = cursor.fetchall()
+        print(result)
+    return result
+
 
 # add an entry
 
@@ -291,7 +369,7 @@ def add_county():
                 return result, 201
 
 
-@app.route('/api/state', methods=['POST'])
+@app.route('/api/state/', methods=['POST'])
 def add_state():
     name = request.form.get("name", None)
     if name is None:
@@ -311,6 +389,53 @@ def add_state():
             return result, 201
         else:
             return "State already exists", 400
+
+
+@app.route('/api/region/', methods=['POST'])
+def add_region():
+    name = request.form.get("name", None)
+    if name is None:
+        return "Bad request", 400
+    with connection.cursor() as cursor:
+        sql = f"SELECT * FROM Region WHERE name = '{name}'"
+        cursor.execute(sql)
+        result = cursor.fetchall()
+        if len(result) == 0:
+            sql = f"INSERT INTO Region(name) VALUES ('{name}')"
+            # request reutrns a dictionary, similar logic to above to parce an insert statement
+            cursor.execute(sql)
+            sql = f"SELECT * FROM Region WHERE name = '{name}'"
+            cursor.execute(sql)
+            result = cursor.fetchall()
+            connection.commit()
+            return result, 201
+        else:
+            return "Region already exists", 400
+
+
+@app.route('/api/site_region/', methods=['POST'])
+def add_site_region():
+    site_id = request.form.get("site_id", None)
+    region_id = request.form.get("region_id", None)
+    if site_id is None:
+        return "Bad request, no site", 400
+    if region_id is None:
+        return "Bad request, no region", 400
+    with connection.cursor() as cursor:
+        sql = f"SELECT * FROM Site_Region WHERE site_id = {site_id} AND region_id = {region_id}"
+        cursor.execute(sql)
+        result = cursor.fetchall()
+        if len(result) == 0:
+            sql = f"INSERT INTO Site_Region(site_id, region_id) VALUES ({site_id}, {region_id})"
+            # request reutrns a dictionary, similar logic to above to parce an insert statement
+            cursor.execute(sql)
+            sql = f"SELECT * FROM Site_Region WHERE site_id = {site_id} AND region_id = {region_id}"
+            cursor.execute(sql)
+            result = cursor.fetchall()
+            connection.commit()
+            return result, 201
+        else:
+            return "Relationship already exists", 200
 
 
 @app.route('/api/getdata/', methods=['POST'])
@@ -346,6 +471,28 @@ def add_measurement():
         # print(result)
         connection.commit()
         return "Entry added", 201
+
+
+@app.route('/api/compound/', methods=['POST'])
+def add_compound():
+    name = request.form.get("name", None)
+    if name is None:
+        return "Bad request", 400
+    with connection.cursor() as cursor:
+        sql = f"SELECT * FROM Compound WHERE name = '{name}'"
+        cursor.execute(sql)
+        result = cursor.fetchall()
+        if len(result) == 0:
+            sql = f"INSERT INTO Compound(name) VALUES ('{name}')"
+            # request reutrns a dictionary, similar logic to above to parce an insert statement
+            cursor.execute(sql)
+            sql = f"SELECT * FROM Compound WHERE name = '{name}'"
+            cursor.execute(sql)
+            result = cursor.fetchall()
+            connection.commit()
+            return result, 201
+        else:
+            return "Compound already exists", 400
 
 # delete an entry
 
@@ -414,6 +561,22 @@ def delete_state(state_id):
             return result[0], 200
 
 
+@app.route('/api/region/<int:region_id>', methods=['DELETE'])
+def delete_region(region_id):
+    with connection.cursor() as cursor:
+        sql = f"SELECT * FROM Region WHERE id = {region_id}"
+        cursor.execute(sql)
+        result = cursor.fetchall()
+        if len(result) == 0:
+            return "Entry did not exist", 200
+        else:
+            sql = f"DELETE FROM Region WHERE id = {region_id}"
+            # request reutrns a dictionary, similar logic to above to parce an insert statement
+            cursor.execute(sql)
+            connection.commit()
+            return result[0], 200
+
+
 @app.route('/api/measurement/<int:measurement_id>', methods=['DELETE'])
 def delete_measurement(measurement_id):
     with connection.cursor() as cursor:
@@ -429,46 +592,40 @@ def delete_measurement(measurement_id):
             connection.commit()
             return result[0], 200
 
+
+@app.route('/api/compound/<int:compound_id>', methods=['DELETE'])
+def delete_compound(compound_id):
+    with connection.cursor() as cursor:
+        sql = f"SELECT * FROM Compound WHERE id = {compound_id}"
+        cursor.execute(sql)
+        result = cursor.fetchall()
+        if len(result) == 0:
+            return "Entry did not exist", 200
+        else:
+            sql = f"DELETE FROM Compound WHERE id = {compound_id}"
+            # request reutrns a dictionary, similar logic to above to parce an insert statement
+            cursor.execute(sql)
+            connection.commit()
+            return result[0], 200
+
 # patch an ID
 
 
-@app.route('/api/state/<int:state_id>', methods=['PATCH'])
-def patch_state(state_id):
-    name = request.form.get("name", None)
-    if name is None:
+@app.route('/api/site/<int:site_id>', methods=['PATCH'])
+def patch_site(site_id):
+    address = request.form.get("address", None)
+    if address is None:
         return "Bad request", 400
     with connection.cursor() as cursor:
-        sql = f"SELECT * FROM State WHERE id = {state_id}"
-        cursor.execute(sql)
-        result = cursor.fetchall()
-        if result.__len__() == 0:
-            return "Entry did not exist", 400
-        else:
-            sql = f"UPDATE State SET name = '{name}' WHERE id = {state_id}"
-            cursor.execute(sql)
-            sql = f"SELECT * FROM State WHERE name = '{name}'"
-            cursor.execute(sql)
-            result = cursor.fetchall()
-            print(result)
-            connection.commit()
-            return result, 201
-
-
-@app.route('/api/county/<int:county_id>', methods=['PATCH'])
-def patch_county(county_id):
-    name = request.form.get("name", None)
-    if name is None:
-        return "Bad request", 400
-    with connection.cursor() as cursor:
-        sql = f"SELECT * FROM County WHERE id = {county_id}"
+        sql = f"SELECT * FROM Site WHERE id = {site_id}"
         cursor.execute(sql)
         result = cursor.fetchall()
         if len(result) == 0:
             return "Entry did not exist", 400
         else:
-            sql = f"UPDATE County SET name = '{name}' WHERE id = {county_id}"
+            sql = f"UPDATE Site SET name = '{address}' WHERE id = {site_id}"
             cursor.execute(sql)
-            sql = f"SELECT * FROM County WHERE name = '{name}'"
+            sql = f"SELECT * FROM Site WHERE name = '{address}'"
             cursor.execute(sql)
             result = cursor.fetchall()
             print(result)
@@ -498,21 +655,21 @@ def patch_city(city_id):
             return result, 201
 
 
-@app.route('/api/site/<int:site_id>', methods=['PATCH'])
-def patch_site(site_id):
-    address = request.form.get("address", None)
-    if address is None:
+@app.route('/api/county/<int:county_id>', methods=['PATCH'])
+def patch_county(county_id):
+    name = request.form.get("name", None)
+    if name is None:
         return "Bad request", 400
     with connection.cursor() as cursor:
-        sql = f"SELECT * FROM Site WHERE id = {site_id}"
+        sql = f"SELECT * FROM County WHERE id = {county_id}"
         cursor.execute(sql)
         result = cursor.fetchall()
         if len(result) == 0:
             return "Entry did not exist", 400
         else:
-            sql = f"UPDATE Site SET name = '{address}' WHERE id = {site_id}"
+            sql = f"UPDATE County SET name = '{name}' WHERE id = {county_id}"
             cursor.execute(sql)
-            sql = f"SELECT * FROM Site WHERE name = '{address}'"
+            sql = f"SELECT * FROM County WHERE name = '{name}'"
             cursor.execute(sql)
             result = cursor.fetchall()
             print(result)
@@ -520,6 +677,70 @@ def patch_site(site_id):
             return result, 201
 
 
+@app.route('/api/state/<int:state_id>', methods=['PATCH'])
+def patch_state(state_id):
+    name = request.form.get("name", None)
+    if name is None:
+        return "Bad request", 400
+    with connection.cursor() as cursor:
+        sql = f"SELECT * FROM State WHERE id = {state_id}"
+        cursor.execute(sql)
+        result = cursor.fetchall()
+        if result.__len__() == 0:
+            return "Entry did not exist", 400
+        else:
+            sql = f"UPDATE State SET name = '{name}' WHERE id = {state_id}"
+            cursor.execute(sql)
+            sql = f"SELECT * FROM State WHERE name = '{name}'"
+            cursor.execute(sql)
+            result = cursor.fetchall()
+            print(result)
+            connection.commit()
+            return result, 201
+
+
+@app.route('/api/region/<int:region_id>', methods=['PATCH'])
+def patch_region(region_id):
+    name = request.form.get("name", None)
+    if name is None:
+        return "Bad request", 400
+    with connection.cursor() as cursor:
+        sql = f"SELECT * FROM Region WHERE id = {region_id}"
+        cursor.execute(sql)
+        result = cursor.fetchall()
+        if result.__len__() == 0:
+            return "Entry did not exist", 400
+        else:
+            sql = f"UPDATE Region SET name = '{name}' WHERE id = {region_id}"
+            cursor.execute(sql)
+            sql = f"SELECT * FROM Region WHERE name = '{name}'"
+            cursor.execute(sql)
+            result = cursor.fetchall()
+            print(result)
+            connection.commit()
+            return result, 201
+
+
+@app.route('/api/compound/<int:compound_id>', methods=['PATCH'])
+def patch_compound(compound_id):
+    name = request.form.get("name", None)
+    if name is None:
+        return "Bad request", 400
+    with connection.cursor() as cursor:
+        sql = f"SELECT * FROM Compound WHERE id = {compound_id}"
+        cursor.execute(sql)
+        result = cursor.fetchall()
+        if result.__len__() == 0:
+            return "Entry did not exist", 400
+        else:
+            sql = f"UPDATE Compound SET name = '{name}' WHERE id = {compound_id}"
+            cursor.execute(sql)
+            sql = f"SELECT * FROM Compound WHERE name = '{name}'"
+            cursor.execute(sql)
+            result = cursor.fetchall()
+            print(result)
+            connection.commit()
+            return result, 201
 
 
 if __name__ == '__main__':
