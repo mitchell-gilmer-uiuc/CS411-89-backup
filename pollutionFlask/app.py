@@ -30,7 +30,7 @@ def make_where_clause(param_map):
                     for i in range(len(csv)):
                         if i == 0:
                             parce.append(f"({key} = '{csv[i]}'")
-                        elif i == (len(csv)-1):
+                        elif i == (len(csv) - 1):
                             parce.append(f" OR {key} = '{csv[i]}')")
                         else:
                             parce.append(f" OR {key} = '{csv[i]}'")
@@ -39,6 +39,17 @@ def make_where_clause(param_map):
     query_where = ' AND '.join(params)
     if len(query_where) > 0:
         return f"WHERE {query_where}"
+    return ''
+
+
+def make_patch_set(param_map):
+    params = []
+    for key, value in param_map.items():
+        if value is not None:
+            params.append(f"{key} = '{value}'")
+            patch_keys = ' , '.join(params)
+            if len(patch_keys) > 0:
+                return f"{patch_keys}"
     return ''
 
 
@@ -124,6 +135,7 @@ def get_compound(id):  # put application's code here
         result = cursor.fetchall()
         print(result)
     return result
+
 
 # get multiple results with filters (or all entries without filters)
 
@@ -438,7 +450,7 @@ def add_site_region():
             return "Relationship already exists", 200
 
 
-@app.route('/api/getdata/', methods=['POST'])
+@app.route('/api/measurement/', methods=['POST'])
 def add_measurement():
     site_id = request.form.get("site_id", None)
     compound_id = request.form.get("compound_id", None)
@@ -462,8 +474,8 @@ def add_measurement():
         result = cursor.fetchall()
         if len(result) == 0:
             return "Invalid compound", 400
-        sql = (f"INSERT INTO Measurement(site_id, compound_id, date, parts_per, mean, max_value, max_hour, aqi) "
-               f"VALUES ('{site_id}, {compound_id}, '{date}', {parts_per}, {mean}, {max_value}, {max_hour}, {aqi} ')")
+        sql = (f"INSERT INTO Measurement(site_id, compound_id, date, parts_per, mean, max_value, max_hour, aqi) VALUES ({site_id}, {compound_id}, '{date}', {parts_per}, {mean}, {max_value}, {max_hour}, {aqi})")
+        print(sql)
         cursor.execute(sql)
         # sql = f"SELECT * FROM Measurement WHERE name = '{name}'"
         # cursor.execute(sql)
@@ -493,6 +505,7 @@ def add_compound():
             return result, 201
         else:
             return "Compound already exists", 400
+
 
 # delete an entry
 
@@ -608,24 +621,31 @@ def delete_compound(compound_id):
             connection.commit()
             return result[0], 200
 
+
 # patch an ID
 
 
-@app.route('/api/site/<int:site_id>', methods=['PATCH'])
-def patch_site(site_id):
-    address = request.form.get("address", None)
-    if address is None:
+@app.route('/api/site/<int:id>', methods=['PATCH'])
+def patch_site(id):
+    param_map = {
+        'address': request.form.get('address', None),
+        'city_id': request.form.get('city_id', None),
+    }
+    patch_params = make_patch_set(param_map)
+    where_params = make_where_clause(param_map)
+    if len(patch_params) == 0:
         return "Bad request", 400
     with connection.cursor() as cursor:
-        sql = f"SELECT * FROM Site WHERE id = {site_id}"
+        sql = f"SELECT * FROM Site WHERE id = {id}"
         cursor.execute(sql)
         result = cursor.fetchall()
-        if len(result) == 0:
+        if result.__len__() == 0:
             return "Entry did not exist", 400
         else:
-            sql = f"UPDATE Site SET name = '{address}' WHERE id = {site_id}"
+            sql = f"UPDATE Site SET {patch_params} WHERE id = {id}"
+            print(sql)
             cursor.execute(sql)
-            sql = f"SELECT * FROM Site WHERE name = '{address}'"
+            sql = f"SELECT * FROM Site {where_params}"
             cursor.execute(sql)
             result = cursor.fetchall()
             print(result)
@@ -633,21 +653,27 @@ def patch_site(site_id):
             return result, 201
 
 
-@app.route('/api/city/<int:city_id>', methods=['PATCH'])
-def patch_city(city_id):
-    name = request.form.get("name", None)
-    if name is None:
+@app.route('/api/city/<int:id>', methods=['PATCH'])
+def patch_city(id):
+    param_map = {
+        'name': request.form.get('name', None),
+        'county_id': request.form.get('city_id', None),
+    }
+    patch_params = make_patch_set(param_map)
+    where_params = make_where_clause(param_map)
+    if len(patch_params) == 0:
         return "Bad request", 400
     with connection.cursor() as cursor:
-        sql = f"SELECT * FROM City WHERE id = {city_id}"
+        sql = f"SELECT * FROM City WHERE id = {id}"
         cursor.execute(sql)
         result = cursor.fetchall()
-        if len(result) == 0:
+        if result.__len__() == 0:
             return "Entry did not exist", 400
         else:
-            sql = f"UPDATE City SET name = '{name}' WHERE id = {city_id}"
+            sql = f"UPDATE City SET {patch_params} WHERE id = {id}"
+            print(sql)
             cursor.execute(sql)
-            sql = f"SELECT * FROM City WHERE name = '{name}'"
+            sql = f"SELECT * FROM City {where_params}"
             cursor.execute(sql)
             result = cursor.fetchall()
             print(result)
@@ -655,21 +681,27 @@ def patch_city(city_id):
             return result, 201
 
 
-@app.route('/api/county/<int:county_id>', methods=['PATCH'])
-def patch_county(county_id):
-    name = request.form.get("name", None)
-    if name is None:
+@app.route('/api/county/<int:id>', methods=['PATCH'])
+def patch_county(id):
+    param_map = {
+        'name': request.form.get('name', None),
+        'state_id': request.form.get('state_id', None),
+    }
+    patch_params = make_patch_set(param_map)
+    where_params = make_where_clause(param_map)
+    if len(patch_params) == 0:
         return "Bad request", 400
     with connection.cursor() as cursor:
-        sql = f"SELECT * FROM County WHERE id = {county_id}"
+        sql = f"SELECT * FROM County WHERE id = {id}"
         cursor.execute(sql)
         result = cursor.fetchall()
-        if len(result) == 0:
+        if result.__len__() == 0:
             return "Entry did not exist", 400
         else:
-            sql = f"UPDATE County SET name = '{name}' WHERE id = {county_id}"
+            sql = f"UPDATE County SET {patch_params} WHERE id = {id}"
+            print(sql)
             cursor.execute(sql)
-            sql = f"SELECT * FROM County WHERE name = '{name}'"
+            sql = f"SELECT * FROM County {where_params}"
             cursor.execute(sql)
             result = cursor.fetchall()
             print(result)
@@ -679,8 +711,12 @@ def patch_county(county_id):
 
 @app.route('/api/state/<int:state_id>', methods=['PATCH'])
 def patch_state(state_id):
-    name = request.form.get("name", None)
-    if name is None:
+    param_map = {
+        'name': request.form.get('name', None),
+    }
+    patch_params = make_patch_set(param_map)
+    where_params = make_where_clause(param_map)
+    if len(patch_params) == 0:
         return "Bad request", 400
     with connection.cursor() as cursor:
         sql = f"SELECT * FROM State WHERE id = {state_id}"
@@ -689,9 +725,10 @@ def patch_state(state_id):
         if result.__len__() == 0:
             return "Entry did not exist", 400
         else:
-            sql = f"UPDATE State SET name = '{name}' WHERE id = {state_id}"
+            sql = f"UPDATE State SET {patch_params} WHERE id = {state_id}"
+            print(sql)
             cursor.execute(sql)
-            sql = f"SELECT * FROM State WHERE name = '{name}'"
+            sql = f"SELECT * FROM State {where_params}"
             cursor.execute(sql)
             result = cursor.fetchall()
             print(result)
@@ -714,6 +751,39 @@ def patch_region(region_id):
             sql = f"UPDATE Region SET name = '{name}' WHERE id = {region_id}"
             cursor.execute(sql)
             sql = f"SELECT * FROM Region WHERE name = '{name}'"
+            cursor.execute(sql)
+            result = cursor.fetchall()
+            print(result)
+            connection.commit()
+            return result, 201
+
+
+@app.route('/api/measurement/<int:data_id>', methods=['PATCH'])
+def patch_measurement(data_id):
+    param_map = {
+        'compound_id': request.form.get("compound_id", None),
+        'date': request.form.get("date", None),
+        'parts_per': request.form.get("parts_per", None),
+        'mean': request.form.get("mean", None),
+        'max_value': request.form.get("max_value", None),
+        'max_hour': request.form.get("max_hour", None),
+        'aqi': request.form.get("aqi", None)
+    }
+    patch_params = make_patch_set(param_map)
+    where_params = make_where_clause(param_map)
+    if len(patch_params) == 0:
+        return "Bad request", 400
+    with connection.cursor() as cursor:
+        sql = f"SELECT * FROM Measurement WHERE id = {data_id}"
+        cursor.execute(sql)
+        result = cursor.fetchall()
+        if result.__len__() == 0:
+            return "Entry did not exist", 400
+        else:
+            sql = f"UPDATE Measurement SET {patch_params} WHERE id = {data_id}"
+            print(sql)
+            cursor.execute(sql)
+            sql = f"SELECT * FROM Measurement {where_params}"
             cursor.execute(sql)
             result = cursor.fetchall()
             print(result)
