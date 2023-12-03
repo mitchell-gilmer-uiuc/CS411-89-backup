@@ -92,14 +92,47 @@ def get_states():  # put application's code here
         print(result)
     return result
 
-# get some of everything WIP
+# get single entries by ID
 
 
-@app.route('/api/state/<int:state_id>')  # @app.route(GET/api/states)
-def get_state(state_id):  # put application's code here
+@app.route('/api/state/<int:id>')
+def get_state(id):  # put application's code here
     with connection.cursor() as cursor:
         # Read a single record
-        sql = f"SELECT * FROM State WHERE id={state_id}"
+        sql = f"SELECT * FROM State WHERE id={id}"
+        cursor.execute(sql)
+        result = cursor.fetchall()
+        print(result)
+    return result
+
+
+@app.route('/api/state/<int:id>')
+def get_county(id):  # put application's code here
+    with connection.cursor() as cursor:
+        # Read a single record
+        sql = f"SELECT * FROM County WHERE id={id}"
+        cursor.execute(sql)
+        result = cursor.fetchall()
+        print(result)
+    return result
+
+
+@app.route('/api/state/<int:id>')
+def get_city(id):  # put application's code here
+    with connection.cursor() as cursor:
+        # Read a single record
+        sql = f"SELECT * FROM City WHERE id={id}"
+        cursor.execute(sql)
+        result = cursor.fetchall()
+        print(result)
+    return result
+
+
+@app.route('/api/state/<int:id>')
+def get_site(id):  # put application's code here
+    with connection.cursor() as cursor:
+        # Read a single record
+        sql = f"SELECT * FROM Site WHERE id={id}"
         cursor.execute(sql)
         result = cursor.fetchall()
         print(result)
@@ -156,6 +189,7 @@ def add_site():
                 sql = f"SELECT * FROM Site WHERE city_id = city_id and address = '{address}'"
                 cursor.execute(sql)
                 result = cursor.fetchall()
+                connection.commit()
                 return result, 201
 
 
@@ -187,6 +221,7 @@ def add_city():
                 sql = f"SELECT * FROM City WHERE county_id = county_id and name = '{name}'"
                 cursor.execute(sql)
                 result = cursor.fetchall()
+                connection.commit()
                 return result, 201
 
 
@@ -215,6 +250,7 @@ def add_county():
                 sql = f"SELECT * FROM County WHERE state_id = state_id and name = '{name}'"
                 cursor.execute(sql)
                 result = cursor.fetchall()
+                connection.commit()
                 return result, 201
 
 
@@ -234,7 +270,7 @@ def add_state():
             sql = f"SELECT * FROM State WHERE name = '{name}'"
             cursor.execute(sql)
             result = cursor.fetchall()
-            print(result)
+            connection.commit()
             return result, 201
         else:
             return "State already exists", 400
@@ -271,12 +307,13 @@ def add_measurement():
         # cursor.execute(sql)
         # result = cursor.fetchall()
         # print(result)
+        connection.commit()
         return "Entry added", 201
 
 
 # delete an entry
 
-@app.route('/api/site/<int:<site_id>', methods=['DELETE'])
+@app.route('/api/site/<int:site_id>', methods=['DELETE'])
 def delete_site(site_id):
     with connection.cursor() as cursor:
         sql = f"SELECT * FROM Site WHERE id = {site_id}"
@@ -288,10 +325,11 @@ def delete_site(site_id):
             sql = f"DELETE FROM Site WHERE id = {site_id}"
             # request reutrns a dictionary, similar logic to above to parce an insert statement
             cursor.execute(sql)
+            connection.commit()
             return result[0], 200
 
 
-@app.route('/api/city/<int:<city_id>', methods=['DELETE'])
+@app.route('/api/city/<int:city_id>', methods=['DELETE'])
 def delete_city(city_id):
     with connection.cursor() as cursor:
         sql = f"SELECT * FROM City WHERE id = {city_id}"
@@ -303,6 +341,7 @@ def delete_city(city_id):
             sql = f"DELETE FROM City WHERE id = {city_id}"
             # request reutrns a dictionary, similar logic to above to parce an insert statement
             cursor.execute(sql)
+            connection.commit()
             return result[0], 200
 
 
@@ -318,6 +357,7 @@ def delete_county(county_id):
             sql = f"DELETE FROM County WHERE id = {county_id}"
             # request reutrns a dictionary, similar logic to above to parce an insert statement
             cursor.execute(sql)
+            connection.commit()
             return result[0], 200
 
 
@@ -333,6 +373,7 @@ def delete_state(state_id):
             sql = f"DELETE FROM State WHERE id = {state_id}"
             # request reutrns a dictionary, similar logic to above to parce an insert statement
             cursor.execute(sql)
+            connection.commit()
             return result[0], 200
 
 
@@ -348,6 +389,7 @@ def delete_measurement(measurement_id):
             sql = f"DELETE FROM Measurement WHERE id = {measurement_id}"
             # request reutrns a dictionary, similar logic to above to parce an insert statement
             cursor.execute(sql)
+            connection.commit()
             return result[0], 200
 
 # patch everything
