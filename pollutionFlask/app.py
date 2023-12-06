@@ -19,10 +19,34 @@ def make_where_clause(param_map):
     for key, value in param_map.items():
         if value is not None:
             csv = value.split(",")
-            if key == 'start_date' or key == 'gte_mean' or key == 'gte_aqi':
-                params.append(f"date >= '{value}'")
-            elif key == 'end_date' or key == 'lte_mean' or key == 'lte_aqi':
-                params.append(f"date <= '{value}'")
+            if key == 'start_date' or key == 'gte_mean' or key == 'gte_aqi' or key == 'gte_avg_mean' or key == 'gte_avg_aqi':
+                if key == 'start_data':
+                    other_key = "date"
+                elif key == 'gte_mean':
+                    other_key = "mean"
+                elif key == 'gte_aqi':
+                    other_key = "aqi"
+                elif key == 'gte_avg_mean':
+                    other_key = "avg_mean"
+                elif key == 'gte_avg_aqi':
+                    other_key = "avg_aqi"
+                else:
+                    other_key = "FAILURE"
+                params.append(f"{other_key} >= '{value}'")
+            elif key == 'end_date' or key == 'lte_mean' or key == 'lte_aqi' or key == 'lte_avg_mean' or key == 'lte_avg_aqi':
+                if key == 'start_data':
+                    other_key = "date"
+                elif key == 'lte_mean':
+                    other_key = "mean"
+                elif key == 'lte_aqi':
+                    other_key = "aqi"
+                elif key == 'lte_avg_mean':
+                    other_key = "avg_mean"
+                elif key == 'lte_avg_aqi':
+                    other_key = "avg_aqi"
+                else:
+                    other_key = "FAILURE"
+                params.append(f"{other_key} <= '{value}'")
             else:
                 if len(csv) == 1:
                     params.append(f"{key} = '{value}'")
@@ -279,6 +303,28 @@ def get_compounds():  # put application's code here
     with connection.cursor() as cursor:
         # Read a single record
         sql = f"SELECT * FROM Compound {query_where}"
+        print(sql)
+        cursor.execute(sql)
+        result = cursor.fetchall()
+        print(result)
+    return result
+
+@app.route('/api/site_average/')  # @app.route(GET/api/states)
+def get_site_avg():  # put application's code here
+    param_map = {
+        'id': request.args.get('id', None),
+        'avg_mean': request.args.get('avg_mean', None),
+        'avg_avg_aqi': request.args.get('avg_aqi', None),
+        'gte_avg_mean': request.args.get('gte_avg_mean', None),
+        'lte_avg_mean': request.args.get('lte_avg_mean', None),
+        'gte_avg_aqi': request.args.get('gte_avg_aqi', None),
+        'lte_avg_aqi': request.args.get('lte_avg_aqi', None),
+    }
+
+    query_where = make_where_clause(param_map)
+    with connection.cursor() as cursor:
+        # Read a single record
+        sql = f"SELECT * FROM Site_Avg {query_where}"
         print(sql)
         cursor.execute(sql)
         result = cursor.fetchall()
